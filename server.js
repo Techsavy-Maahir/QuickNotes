@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('./models/User');
-
+const authMiddleware = require("./middleware/auth");
 const app = express();
 
 app.use(express.json());
@@ -87,6 +87,12 @@ if (!isMatch) {
     userId: user._id
   });
 
+});
+app.get('/api/protected', authMiddleware, (req, res) => {
+  res.status(200).json({
+    message: "Access Granted",
+    userId: req.userId
+  });
 });
 
 app.listen(process.env.PORT || 5000, () => {
