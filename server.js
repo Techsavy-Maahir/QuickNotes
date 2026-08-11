@@ -96,6 +96,19 @@ app.get('/api/protected', authMiddleware, (req, res) => {
   });
 });
 
+app.post('/api/notes', authMiddleware, async (req, res) => {
+  const { title, content, category } = req.body;
+  const note = new Note({
+    title,
+    content,
+    category: category || 'General',
+    userId: req.userId
+  });
+
+  await note.save();
+  res.json(note);
+});
+
 app.listen(process.env.PORT || 5000, () => {
   console.log(`Server is running on port ${process.env.PORT || 5000}`);
 });
