@@ -137,9 +137,17 @@ app.post("/api/notes", authMiddleware, async (req, res) => {
 
 app.get("/api/notes", authMiddleware, async (req, res) => {
   try {
-    const notes = await Note.find({
+    const { category } = req.query;
+
+    let filter = {
       userId: req.userId,
-    }).sort({
+    };
+
+    if (category) {
+      filter.category = category;
+    }
+
+    const notes = await Note.find(filter).sort({
       createdAt: -1,
     });
 
@@ -150,7 +158,6 @@ app.get("/api/notes", authMiddleware, async (req, res) => {
     });
   }
 });
-
 // ======================
 // Get Single Note
 // ======================
