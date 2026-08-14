@@ -179,46 +179,73 @@ app.get("/api/notes/:id", authMiddleware, async (req, res) => {
   }
 });
 
-app.get("/api/notes", authMiddleware, async (req, res) => {
-    try {
-        const notes = await Note.find({
-            userId: req.userId
-        }).sort({
-            createdAt: -1
-        });
+// ======================
+// Update Note
+// ======================
 
-        res.status(200).json(notes);
+app.put("/api/notes/:id", authMiddleware, async (req, res) => {
+  try {
+    const note = await Note.findById(req.params.id);
 
-    } catch (error) {
-        res.status(500).json({
-            message: error.message
-        });
+    if (!note) {
+      return res.status(404).json({
+        message: "Note not found",
+      });
     }
+
+    if (note.userId.toString() !== req.userId.toString()) {
+      return res.status(403).json({
+        message: "Forbidden",
+      });
+    }
+
+    const { title, content, category } = req.body;
+
+    note.title = title || note.title;
+    note.content = content || note.content;
+    note.category = category || note.category;
+    note.updatedAt = Date.now();
+
+    await note.save();
+
+    res.json(note);
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
 });
 
-app.get("/api/notes/:id", authMiddleware, async (req, res) => {
-    try {
-        const note = await Note.findById(req.params.id);
+// ======================
+// Delete Note
+// ======================
 
-        if (!note) {
-            return res.status(404).json({
-                message: "Note not found"
-            });
-        }
+app.delete("/api/notes/:id", authMiddleware, async (req, res) => {
+  try {
+    const note = await Note.findById(req.params.id);
 
-        if (note.userId.toString() !== req.userId.toString()) {
-            return res.status(403).json({
-                message: "Forbidden"
-            });
-        }
-
-        res.status(200).json(note);
-
-    } catch (error) {
-        res.status(500).json({
-            message: error.message
-        });
+    if (!note) {
+      return res.status(404).json({
+        message: "Note not found",
+      });
     }
+
+    if (note.userId.toString() !== req.userId.toString()) {
+      return res.status(403).json({
+        message: "Forbidden",
+      });
+    }
+
+    await Note.findByIdAndDelete(req.params.id);
+
+    res.json({
+      message: "Note deleted",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
 });
 
 // ======================
