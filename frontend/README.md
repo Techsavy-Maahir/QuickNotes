@@ -198,8 +198,8 @@ my-notes-app/
 
 ### Clone the repository
 ```bash
-git clone https://github.com/yourusername/my-notes-app.git
-cd my-notes-app
+git clone https://github.com/Techsavy-Maahir/QuickNotes.git
+cd QuickNotes
 ```
 
 ### Configure the backend
@@ -273,8 +273,9 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 👤 Author
 
-**Your Name**
-- GitHub: [https://github.com/yourusername](https://github.com/yourusername)
+**Techsavy-Maahir**
+- GitHub: [@Techsavy-Maahir](https://github.com/Techsavy-Maahir)
+- Repository: [QuickNotes](https://github.com/Techsavy-Maahir/QuickNotes)
 
 ---
 
