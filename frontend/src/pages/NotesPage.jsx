@@ -24,7 +24,8 @@ function NotesPage({ token, onLogout, darkMode, toggleDarkMode }) {
   const [pendingFiles, setPendingFiles] = useState([]);
   const [activeNoteAttachments, setActiveNoteAttachments] = useState([]);
   const [sharingNote, setSharingNote] = useState(null);
-  const [previewData, setPreviewData] = useState(null); // { noteId, attachment }
+  const [previewData, setPreviewData] = useState(null); // { noteId, attachment, previewUrl }
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const categories = ['General', 'Science', 'Math', 'Work', 'Personal'];
 
@@ -283,36 +284,42 @@ function NotesPage({ token, onLogout, darkMode, toggleDarkMode }) {
     }
   };
 
-  // Preview helper
-  const handleOpenPreview = (noteId, attachment) => {
-    setPreviewData({ noteId, attachment });
+  // Preview helper: fetch preview with auth header and create blob URL
+  const handleOpenPreview = async (noteId, attachment) => {
+    try {
+      setPreviewLoading(true);
+      const url = `http://localhost:5000/api/notes/${noteId}/attachments/${attachment._id}/preview`;
+      const res = await fetch(url, { headers });
+      if (!res.ok) throw new Error('Preview fetch failed');
+      const blob = await res.blob();
+      const previewBlobUrl = window.URL.createObjectURL(blob);
+      setPreviewData({ noteId, attachment, previewUrl: previewBlobUrl });
+    } catch (err) {
+      setError('Failed to load preview. Please try again.');
+      setTimeout(() => setError(''), 4000);
+    } finally {
+      setPreviewLoading(false);
+    }
   };
 
-  const handleDownloadAttachment = (noteId, attachment) => {
-    const url = `http://localhost:5000/api/notes/${noteId}/attachments/${attachment._id}/download`;
-    const link = document.createElement('a');
-    link.href = url;
-    // Set authorization header via fetch download or direct url if token
-    // Using fetch with bearer token to create blob download
-    fetch(url, { headers })
-      .then((res) => {
-        if (!res.ok) throw new Error('Download failed');
-        return res.blob();
-      })
-      .then((blob) => {
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = attachment.originalName;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(blobUrl);
-      })
-      .catch(() => {
-        setError('Failed to download attachment');
-        setTimeout(() => setError(''), 3000);
-      });
+  const handleDownloadAttachment = async (noteId, attachment) => {
+    try {
+      const url = `http://localhost:5000/api/notes/${noteId}/attachments/${attachment._id}/download`;
+      const res = await fetch(url, { headers });
+      if (!res.ok) throw new Error('Download failed');
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = attachment.originalName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      setError('Failed to download attachment');
+      setTimeout(() => setError(''), 3000);
+    }
   };
 
   const existingCategories = Array.from(
@@ -825,10 +832,20 @@ function NotesPage({ token, onLogout, darkMode, toggleDarkMode }) {
       {previewData && (
         <AttachmentPreviewModal
           attachment={previewData.attachment}
-          previewUrl={`http://localhost:5000/api/notes/${previewData.noteId}/attachments/${previewData.attachment._id}/preview`}
-          downloadUrl={`http://localhost:5000/api/notes/${previewData.noteId}/attachments/${previewData.attachment._id}/download`}
+          previewUrl={previewData.previewUrl}
           onClose={() => setPreviewData(null)}
+          onDownload={() => handleDownloadAttachment(previewData.noteId, previewData.attachment)}
         />
+      )}
+
+      {/* Preview Loading Overlay */}
+      {previewLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 flex flex-col items-center gap-3">
+            <div className="text-3xl animate-spin">⏳</div>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Loading preview…</p>
+          </div>
+        </div>
       )}
     </div>
   );
