@@ -1,11 +1,17 @@
 import { useState, useEffect } from 'react';
 import AuthPage from './pages/AuthPage';
 import NotesPage from './pages/NotesPage';
+import SharedNoteView from './components/SharedNoteView';
 import './index.css';
 
 function App() {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [shareToken, setShareToken] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('share') || params.get('shareToken') || null;
+  });
+
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
     return saved ? JSON.parse(saved) : false;
@@ -42,6 +48,12 @@ function App() {
     setToken(null);
   };
 
+  const handleBackToApp = () => {
+    // Clear URL share query parameter
+    window.history.replaceState({}, document.title, window.location.pathname);
+    setShareToken(null);
+  };
+
   if (loading) {
     return (
       <div className={darkMode ? 'dark' : ''}>
@@ -50,6 +62,20 @@ function App() {
             Loading Secure Notes...
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // If visiting via a share link, show the Shared Note View
+  if (shareToken) {
+    return (
+      <div className={darkMode ? 'dark' : ''}>
+        <SharedNoteView
+          token={shareToken}
+          onBackToApp={handleBackToApp}
+          darkMode={darkMode}
+          toggleDarkMode={toggleDarkMode}
+        />
       </div>
     );
   }
@@ -77,4 +103,3 @@ function App() {
 }
 
 export default App;
-
